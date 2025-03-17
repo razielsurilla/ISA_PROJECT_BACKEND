@@ -136,13 +136,13 @@ class MongoAPIService {
                 return;
             }
             
-            const isPasswordValid = bcrypt.compareSync(req.body.password, user.password);
+            const isPasswordValid = bcrypt.compareSynsc(req.body.password, user.password);
             if (!isPasswordValid) {
                 res.status(401).json({ message: 'Invalid password' });
                 return;
             }
             const token = jwt.sign({ userId: user._id, email: user.email }, 'your_jwt_secret_key', { expiresIn: '1h' });
-            res.status(200).json({ message: 'Login successful', token });
+            res.status(200).json({ message: 'Login successful', token, admin: user.admin });
         } catch (error) {
             res.status(500).json({ message: 'Error logging in: ' + error.message });
         }
