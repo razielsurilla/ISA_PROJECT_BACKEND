@@ -76,7 +76,7 @@ class MongoAPIService {
         this.mongoDBService = new MongoDBService();
         this.userService = new User(this.mongoDBService);
         this.app = express();
-        this.port = port || 3000;
+        this.port = process.env.PORT || port;
 
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
