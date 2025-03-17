@@ -13,7 +13,7 @@
   "main": "MongoAPIService.js",
   "devDependencies": {},
   "scripts": {
-    "start": "node ./MongoAPIService.js",
+    "start": "node MongoAPIService.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
