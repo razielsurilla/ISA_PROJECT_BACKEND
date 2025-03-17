@@ -136,7 +136,7 @@ class MongoAPIService {
                 return;
             }
             
-            const isPasswordValid = bcrypt.compareSynsc(req.body.password, user.password);
+            const isPasswordValid = bcrypt.compareSync(req.body.password, user.password);
             if (!isPasswordValid) {
                 res.status(401).json({ message: 'Invalid password' });
                 return;
