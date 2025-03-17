@@ -91,9 +91,6 @@ class MongoAPIService {
         this.app.post('/createUser', (req, res) => this.createUser(req, res));
         this.app.post('/checkUser', (req, res) => this.checkUser(req, res));
         this.app.get('/getUser', (req, res) => this.getUser(req, res));
-        this.app.get('/health', (req, res) => {
-            res.status(200).json({ message: 'Service is healthy' });
-        });
         
         // digitalocean.com/getUser
 
@@ -105,7 +102,7 @@ class MongoAPIService {
     async start() {
         await this.mongoDBService.connect();
         this.app.use(cors());
-        
+
         this.defineRoutes(); 
 
         this.app.listen(this.port, () => {
