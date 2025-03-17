@@ -152,7 +152,10 @@ class MongoAPIService {
     async getUser(req, res) {
         try {
             const result = await this.userService.getUser(req.body.email)
-            res.status(200).json(result)
+            if (result) {
+                result.password = undefined;
+            }
+            res.status(200).json({message : 'User retrieved successfully', user : result})
         } catch (error) {
             res.status(500).json({ message: 'Error retrieving user: ' + error.message });
         }
