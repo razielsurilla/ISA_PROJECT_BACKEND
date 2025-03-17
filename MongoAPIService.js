@@ -1,7 +1,8 @@
 // Imports
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const express = require('express')
-const MongoDBService = require('./MongoDBService');
+const MongoDBService = require('./MongoDBService.js');
 const mongoose = require('mongoose');
 
 const salt = bcrypt.genSaltSync(10);
@@ -26,7 +27,7 @@ class User {
         try {
             const UserSchema = this.mongoDBService.getSchema('user');
             const encryptedPassword = UserRegistration.encrypt(password);
-            const newUser = new UserSchema({username, email, encryptedPassword});
+            const newUser = new UserSchema({username, email, password: encryptedPassword});
             await newUser.save();
             return newUser;
         } catch (error) {
@@ -77,7 +78,7 @@ class MongoAPIService {
 
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
-        this.app.use(express.static('public'));
+
     }
 
     /**
@@ -85,13 +86,9 @@ class MongoAPIService {
      * @returns {void}
      */
     defineRoutes() {
-        this.app.post('/createUser', (req, res) => {
-            this.createUser()
-        });
-
-        this.app.get('/getUser', (req, res) => {
-            this.getUser(req, res)
-        });
+        this.app.post('/createUser', (req, res) => this.createUser(req, res));
+        this.app.post('/checkUser', (req, res) => this.checkUser(req, res));
+        this.app.get('/getUser', (req, res) => this.getUser(req, res));
         // digitalocean.com/getUser
 
         this.app.delete('/deleteUser', (req, res) => {
@@ -99,7 +96,6 @@ class MongoAPIService {
         })
     }
 
-    
     async start() {
         await this.mongoDBService.connect();
 
@@ -112,12 +108,42 @@ class MongoAPIService {
 
     async createUser(req, res) {
         try {
-            const result = await this.userService.createUser(req.body.name, req.body.email, req.body.password)
-            res.status(201).json({message : 'User Created Succesfully: ' + result.insertedId})
+            const userCollection = this.userService.mongoDBService.getSchema('user');
+            
+            const existingUser = await userCollection.findOne({ email: req.body.email });
+            if (existingUser) {
+                res.status(400).json({ message: 'User already exists' });
+                return;
+            }
+            
+            const result = await this.userService.createUser(req.body.username, req.body.email, req.body.password);
+            res.status(201).json({ message: 'User Created Successfully', userId: result._id });
         } catch (error) {
             res.status(500).json({ message: 'Error creating user: ' + error.message });
         }        
+    }    
+
+    async checkUser(req, res) {
+        try {
+            const userCollection = this.userService.mongoDBService.getSchema('user');
+            const user = await userCollection.findOne({ email: req.body.email });
+            if (!user) {
+                res.status(404).json({ message: 'User not found' });
+                return;
+            }
+            
+            const isPasswordValid = bcrypt.compareSync(req.body.password, user.password);
+            if (!isPasswordValid) {
+                res.status(401).json({ message: 'Invalid password' });
+                return;
+            }
+            const token = jwt.sign({ userId: user._id, email: user.email }, 'your_jwt_secret_key', { expiresIn: '1h' });
+            res.status(200).json({ message: 'Login successful', token });
+        } catch (error) {
+            res.status(500).json({ message: 'Error logging in: ' + error.message });
+        }
     }
+
 
     async getUser(req, res) {
         try {
@@ -128,3 +154,6 @@ class MongoAPIService {
         }
     }
 }
+
+const apiService = new MongoAPIService(3000);
+apiService.start();

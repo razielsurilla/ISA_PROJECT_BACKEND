@@ -38,11 +38,7 @@ class MongoDBService {
                 return this.connection;
             }
 
-            this.connection = await mongoose.connect(this.uri, {
-                 useNewUrlParser: true, 
-                 useUnifiedTopology: true
-                }
-            );
+            this.connection = await mongoose.connect(this.uri);
 
         } catch (error) {
             throw error;
