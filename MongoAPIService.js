@@ -18,6 +18,7 @@ class User {
             username : {type : String, require : true},
             email : {type : String, required : true},
             password : {type : String, required: true},
+            admin: {type: Boolean, default: false}
         }, {
             collection : 'users'
         });
