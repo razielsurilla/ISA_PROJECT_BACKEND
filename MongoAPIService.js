@@ -92,6 +92,12 @@ class MongoAPIService {
         this.app.get('/authenticate', (req, res) => this.authenticate(req, res)); 
 
         this.app.delete('/deleteUser', (req, res) => {})
+
+        // handle prefligts?
+        this.app.options('*', cors({
+            origin: 'https://triviaproto.netlify.app/', 
+            credentials: true,
+        }));
     }
 
     /**
