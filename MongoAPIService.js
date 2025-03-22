@@ -101,7 +101,7 @@ class MongoAPIService {
     async start() {
         await this.mongoDBService.connect();
         this.app.use(cors({
-            origin: 'https://triviaproto.netlify.app/', // Allow both origins
+            origin: 'https://triviaproto.netlify.app/', // frontend
             credentials: true,
             methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', //allows the handling of pre-flights
         })); 
@@ -186,7 +186,7 @@ class MongoAPIService {
 
             //Creates a signed token by jwt, and attach it to httpCookie
             const token = jwt.sign({ userId: user._id, email: user.email }, 'your_jwt_secret_key', { expiresIn: '1h' });
-            res.cookie('userCookie', token, {httpOnly: true, secure : true, sameSite: 'None'});
+            res.cookie('userCookie', token, {httpOnly: true, secure : true, SameSite: 'Lax'});
             res.status(200).json({ message: 'Login successful', admin: user.admin, username: user.username});
         } catch (error) {
             res.status(500).json({ message: 'Error logging in: ' + error.message });
