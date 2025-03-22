@@ -51,6 +51,9 @@ class User {
     } 
 }
 
+/**
+ * Used in User registration for encrypting maybe needs to be revised
+ */
 class UserRegistration {
     static saltRounds = 12;
 
@@ -134,6 +137,13 @@ class MongoAPIService {
         });
     }
 
+    /**
+     * Creates a user and adds it onto the database
+     * 
+     * @param {object} req An express request object
+     * @param {object} res An express response object
+     * @returns {Promise<void>} - A promise that resolves after user has been added to database
+     */
     async createUser(req, res) {
         try {
             const userCollection = this.userService.mongoDBService.getSchema('user');
@@ -176,7 +186,7 @@ class MongoAPIService {
 
             //Creates a signed token by jwt, and attach it to httpCookie
             const token = jwt.sign({ userId: user._id, email: user.email }, 'your_jwt_secret_key', { expiresIn: '1h' });
-            res.cookie('userCookie', token, {httpOnly: true, secure : false, SameSite: 'Lax'});
+            res.cookie('userCookie', token, {httpOnly: true, secure : true, sameSite: 'None'});
             res.status(200).json({ message: 'Login successful', admin: user.admin, username: user.username});
         } catch (error) {
             res.status(500).json({ message: 'Error logging in: ' + error.message });
