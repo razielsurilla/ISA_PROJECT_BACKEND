@@ -95,7 +95,7 @@ class MongoAPIService {
 
         // handle prefligts?
         this.app.options('*', cors({
-            origin: 'https://triviaproto.netlify.app/', 
+            origin: 'https://triviaproto.netlify.app', 
             credentials: true,
             methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization']
@@ -117,7 +117,7 @@ class MongoAPIService {
             throw new Error('Database connection failed');
         }
         this.app.use(cors({
-            origin: 'https://triviaproto.netlify.app/', // frontend
+            origin: 'https://triviaproto.netlify.app', // frontend
             credentials: true,
             methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'], //allows the handling of pre-flights
             allowedHeaders: ['Content-Type', 'Authorization']
