@@ -97,6 +97,8 @@ class MongoAPIService {
         this.app.options('*', cors({
             origin: 'https://triviaproto.netlify.app/', 
             credentials: true,
+            methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
+            allowedHeaders: ['Content-Type', 'Authorization']
         }));
     }
 
@@ -105,11 +107,20 @@ class MongoAPIService {
      * Defines API routes
      */
     async start() {
-        await this.mongoDBService.connect();
+        try {
+            if (this.connection) {
+                return this.connection;
+            }
+            this.connection = await this.mongoDBService.connect();
+        } catch (error) {
+            console.error('Error connecting to MongoDB:', error);
+            throw new Error('Database connection failed');
+        }
         this.app.use(cors({
             origin: 'https://triviaproto.netlify.app/', // frontend
             credentials: true,
-            methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', //allows the handling of pre-flights
+            methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'], //allows the handling of pre-flights
+            allowedHeaders: ['Content-Type', 'Authorization']
         })); 
         this.app.use(cookieParser())
 
