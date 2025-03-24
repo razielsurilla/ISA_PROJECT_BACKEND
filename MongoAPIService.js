@@ -203,8 +203,16 @@ class MongoAPIService {
 
             //Creates a signed token by jwt, and attach it to httpCookie
             const token = jwt.sign({ userId: user._id, email: user.email }, 'your_jwt_secret_key', { expiresIn: '1h' });
-            res.cookie('userCookie', token, {httpOnly: true, secure : true, SameSite: 'None'});
-            res.status(200).json({ message: 'Login successful', admin: user.admin, username: user.username});
+            res.cookie('userCookie', token, 
+                {
+                    httpOnly: true, 
+                    secure : true, 
+                    SameSite: 'None', 
+                    path : '/', //Specifies where the cookie is kept in the specified domain
+                    domain : 'triviaproto.netlify.app', 
+                    maxAge: 3600000 //1hr ms
+                });
+            res.status(200).json({ message: 'Login successful', admin: user.admin,   username: user.username});
         } catch (error) {
             res.status(500).json({ message: 'Error logging in: ' + error.message });
         }
