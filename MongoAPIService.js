@@ -147,7 +147,7 @@ class MongoAPIService {
             return res.status(401).json({ authenticated: false, message: 'No token provided' });
         }
 
-        jwt.verify(token, 'your_jwt_secret_key', (err, decoded) => {
+        jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
             if (err) {
                 return res.status(403).json({ authenticated: false, message: 'Invalid token' });
             }
@@ -204,17 +204,17 @@ class MongoAPIService {
             }
 
             //Creates a signed token by jwt, and attach it to httpCookie
-            const token = jwt.sign({ userId: user._id, email: user.email }, 'your_jwt_secret_key', { expiresIn: '1h' });
-            res.cookie('userCookie', token, 
-                {
-                    httpOnly: true, 
-                    secure : true, 
-                    sameSite: 'none', 
-                    path : '/', //Specifies where the cookie is kept in the specified domain
-                    domain : 'triviaproto.netlify.app', 
-                    maxAge: 3600000 //1hr ms  -> make these a session cookie
-                });
-            res.status(200).json({ message: 'Login successful', admin: user.admin,   username: user.username});
+            const token = jwt.sign(
+                { userId: user._id, email: user.email }, 
+                process.env.JWT_SECRET, 
+                { expiresIn: '1h' }
+            );
+            res.writeHead(200, {
+                "Set-Cookie": `token=${token}; HttpOnly; Secure; SameSite=None; Path=/`,
+                "Content-Type": "application/json",
+            });
+            res.end(JSON.stringify({ message: "Login successful" }));
+            
         } catch (error) {
             res.status(500).json({ message: 'Error logging in: ' + error.message });
         }
@@ -222,7 +222,7 @@ class MongoAPIService {
 
     /**
      * Retrieves a user from the database by email and sends the user data as JSON.
-     *
+     * 
      * @param {object} req - The Express request object containing the user's email in the request body.
      * @param {object} res - The Express response object used to send the user data or an error message.
      * @returns {Promise<void>} - A promise that resolves after sending the response.
