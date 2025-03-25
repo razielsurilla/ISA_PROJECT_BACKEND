@@ -299,7 +299,7 @@ class MongoAPIService {
             );
 
             res.writeHead(200, {
-                "Set-Cookie": `token=${token}; HttpOnly;`, //removed secure, path, sameSite
+                "Set-Cookie": `token=${token}; HttpOnly; Secure; SameSite=None; Path=/;`, //removed secure, path, sameSite
                 "Content-Type": "application/json",
             });
             res.end(JSON.stringify({ message: "Logged in successfully" }));
