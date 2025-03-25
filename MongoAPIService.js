@@ -85,17 +85,17 @@ class MongoAPIService {
      * @returns {void}
      */
     defineRoutes() {
+        this.app.get('/authenticate', (req, res) => this.authenticate(req, res))
+
         this.app.post('/createUser', (req, res) => this.createUser(req, res));
         this.app.post('/checkUser', (req, res) => this.checkUser(req, res));
         this.app.get('/getUser', (req, res) => this.getUser(req, res));
-
-        this.app.get('/authenticate', (req, res) => this.authenticate(req, res)); 
-
         this.app.delete('/deleteUser', (req, res) => {})
 
         // handle prefligts?
         this.app.options('*', cors({
             origin: 'https://triviaproto.netlify.app', 
+            // origin: 'http://localhost:5500',
             credentials: true,
             methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization']
@@ -116,8 +116,10 @@ class MongoAPIService {
             console.error('Error connecting to MongoDB:', error);
             throw new Error('Database connection failed');
         }
+
         this.app.use(cors({
             origin: 'https://triviaproto.netlify.app', // frontend
+            // origin: 'http://localhost:5500',
             credentials: true,
             methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'], //allows the handling of pre-flights
             allowedHeaders: ['Content-Type', 'Authorization']
@@ -150,7 +152,7 @@ class MongoAPIService {
                 return res.status(403).json({ authenticated: false, message: 'Invalid token' });
             }
             // Token is valid
-            res.status(200).json({ authenticated: true, user: decoded }); //send the user data back.
+            res.status(200).json({ message : 'user authenticated',  authenticated: true, user: decoded }); //send the user data back.
         });
     }
 
@@ -207,10 +209,10 @@ class MongoAPIService {
                 {
                     httpOnly: true, 
                     secure : true, 
-                    SameSite: 'None', 
+                    sameSite: 'none', 
                     path : '/', //Specifies where the cookie is kept in the specified domain
                     domain : 'triviaproto.netlify.app', 
-                    maxAge: 3600000 //1hr ms
+                    maxAge: 3600000 //1hr ms  -> make these a session cookie
                 });
             res.status(200).json({ message: 'Login successful', admin: user.admin,   username: user.username});
         } catch (error) {
