@@ -232,8 +232,11 @@ class MongoAPIService {
      * @returns {Promise<void>} - A promise that resolves after authentication.
      */
     authenticate(req, res) {
-        const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
+        console.log(req.headers.cookie?.split("="));
 
+        const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
+        console.log(`Token ${token}`);
+        
         if (!token) {   
             return res.status(401).json({ message: 'No token provided' });
         }
