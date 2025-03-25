@@ -232,10 +232,8 @@ class MongoAPIService {
      * @returns {Promise<void>} - A promise that resolves after authentication.
      */
     authenticate(req, res) {
-        console.log(req.headers.cookie?.split("="));
-
         const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
-        console.log(`Token ${token}`);
+        console.log(`Recieved token : ${token}`);
 
         if (!token) {   
             return res.status(401).json({ message: 'No token provided' });
@@ -301,6 +299,7 @@ class MongoAPIService {
                 { expiresIn: '1h' }
             );
 
+            console.log(`Sent token: ${token}`)
             res.writeHead(200, {
                 "Set-Cookie": `userCookie=${token}; HttpOnly; Secure; SameSite=None; Path=/;`, //removed secure, path, sameSite
                 "Content-Type": "application/json",
