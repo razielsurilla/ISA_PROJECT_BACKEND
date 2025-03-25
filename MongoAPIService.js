@@ -219,7 +219,7 @@ class MongoAPIService {
         //     allowedHeaders: ['Content-Type', 'Authorization']
         // })); 
         this.app.use(cors({
-            origin: ['https://triviaproto.netlify.app', 'http://localhost:3000'], // Allow both
+            origin: ['https://triviaproto.netlify.app', 'http://localhost:3000', 'https://isa-project-frontend-yvfn.onrender.com'], // Allow both
             credentials: true,
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization']
