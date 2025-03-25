@@ -313,7 +313,7 @@ class MongoAPIService {
                     httpOnly: true, 
                     secure : true, 
                     // secure: false, 
-                    sameSite: 'lax', 
+                    sameSite: 'None', 
                     // domain : 'triviaproto.netlify.app', 
                     maxAge: 3600000 //1hr ms  -> make these a session cookie
                 });
