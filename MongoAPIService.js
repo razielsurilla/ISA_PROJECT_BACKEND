@@ -220,8 +220,8 @@ class MongoAPIService {
         }
 
         this.app.use(cors({
-            // origin: 'https://triviaproto.netlify.app', // frontend
-            origin: 'http://localhost:3000', // frontend
+            origin: 'https://triviaproto.netlify.app', // frontend
+            // origin: 'http://localhost:3000', // frontend
             // origin: '127.0.0.1', // frontend
             credentials: true,
             methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'], //allows the handling of pre-flights
@@ -310,11 +310,11 @@ class MongoAPIService {
             res.cookie('userCookie', token, 
                 {
                     httpOnly: true, 
-                    // secure : true, 
-                    secure: false, 
+                    secure : true, 
+                    // secure: false, 
                     sameSite: 'none', 
                     path : '/', //Specifies where the cookie is kept in the specified domain
-                    // domain : 'triviaproto.netlify.app', 
+                    domain : 'triviaproto.netlify.app', 
                     maxAge: 3600000 //1hr ms  -> make these a session cookie
                 });
 
