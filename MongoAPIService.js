@@ -72,6 +72,7 @@ class MongoAPIService {
      * @param {number} port - The port number to listen on
      */
     constructor(port) {
+        console.log("Initializing MongoAPIService")
         this.mongoDBService = new MongoDBService();
         this.userService = new User(this.mongoDBService);
         this.app = express();
