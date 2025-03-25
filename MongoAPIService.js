@@ -104,16 +104,6 @@ class MongoAPIService {
     // }
 
     defineRoutes() {
-        // 1. CORS Preflight Handler - MOVED TO TOP
-        // This must come first to properly handle OPTIONS requests
-        this.app.options('*', cors({
-            origin: ['https://triviaproto.netlify.app', 'http://localhost:3000'], // Added localhost for development
-            credentials: true,
-            methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization']
-        }));
-    
-        // 2. NEW API Tracking Middleware - PLACED BEFORE ROUTES
         // Middleware executes in order, so this must come before routes it protects
         this.app.use(async (req, res, next) => {
             if (req.method === 'OPTIONS') return next(); // Skip preflight requests
@@ -161,14 +151,14 @@ class MongoAPIService {
             }
         });
     
-        // 3. Routes - NOW PROTECTED BY MIDDLEWARE
+        // 2. Routes - NOW PROTECTED BY MIDDLEWARE
         this.app.post('/createUser', (req, res) => this.createUser(req, res));
         this.app.post('/checkUser', (req, res) => this.checkUser(req, res));
         this.app.get('/getUser', (req, res) => this.getUser(req, res));
         this.app.get('/authenticate', (req, res) => this.authenticate(req, res));
         this.app.delete('/deleteUser', (req, res) => {}) // added back
         
-        // 4. NEW Admin Reset Endpoint
+        // 3. Admin Reset Endpoint
         this.app.post('/resetApiRequests', async (req, res) => {
             try {
                 const token = req.cookies.userCookie;
@@ -219,14 +209,20 @@ class MongoAPIService {
             throw new Error('Database connection failed');
         }
 
+        // this.app.use(cors({
+        //     origin: 'https://triviaproto.netlify.app', // frontend
+        //     // origin: 'http://localhost:3000', // frontend
+        //     // origin: '127.0.0.1', // frontend
+        //     credentials: true,
+        //     methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'], //allows the handling of pre-flights
+        //     allowedHeaders: ['Content-Type', 'Authorization']
+        // })); 
         this.app.use(cors({
-            origin: 'https://triviaproto.netlify.app', // frontend
-            // origin: 'http://localhost:3000', // frontend
-            // origin: '127.0.0.1', // frontend
+            origin: ['https://triviaproto.netlify.app', 'http://localhost:3000'], // Allow both
             credentials: true,
-            methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'], //allows the handling of pre-flights
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization']
-        })); 
+        }));
         this.app.use(cookieParser())
         this.defineRoutes(); 
 
