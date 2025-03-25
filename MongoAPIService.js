@@ -236,7 +236,7 @@ class MongoAPIService {
 
         const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
         console.log(`Token ${token}`);
-        
+
         if (!token) {   
             return res.status(401).json({ message: 'No token provided' });
         }
@@ -302,7 +302,7 @@ class MongoAPIService {
             );
 
             res.writeHead(200, {
-                "Set-Cookie": `token=${token}; HttpOnly; Secure; SameSite=None; Path=/;`, //removed secure, path, sameSite
+                "Set-Cookie": `userCookie=${token}; HttpOnly; Secure; SameSite=None; Path=/;`, //removed secure, path, sameSite
                 "Content-Type": "application/json",
             });
             res.end(JSON.stringify({ message: "Logged in successfully" }));
