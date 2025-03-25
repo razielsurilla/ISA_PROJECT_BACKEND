@@ -308,8 +308,7 @@ class MongoAPIService {
                     httpOnly: true, 
                     secure : true, 
                     // secure: false, 
-                    sameSite: 'none', 
-                    path : '/', //Specifies where the cookie is kept in the specified domain
+                    sameSite: 'lax', 
                     domain : 'triviaproto.netlify.app', 
                     maxAge: 3600000 //1hr ms  -> make these a session cookie
                 });
