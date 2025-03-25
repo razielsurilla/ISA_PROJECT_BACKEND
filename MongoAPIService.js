@@ -310,20 +310,13 @@ class MongoAPIService {
             res.cookie('userCookie', token, 
                 {
                     httpOnly: true, 
-                    secure : true, 
+                    // secure : true, 
+                    secure: false, 
                     sameSite: 'none', 
                     path : '/', //Specifies where the cookie is kept in the specified domain
-                    domain : 'triviaproto.netlify.app', 
+                    // domain : 'triviaproto.netlify.app', 
                     maxAge: 3600000 //1hr ms  -> make these a session cookie
                 });
-            res.status(200).json({ message: 'Login successful', admin: user.admin,   username: user.username});
-
-            res.cookie('userCookie', token, {
-                httpOnly: true, 
-                secure: false, // NOTE: Should be true in production (requires HTTPS)
-                sameSite: 'None', // NOTE: Should be 'None' in production if using cross-site
-                maxAge: 3600000 
-            });
 
             res.status(200).json({ message: 'Login successful', admin: user.admin, username: user.username});
         } catch (error) {
