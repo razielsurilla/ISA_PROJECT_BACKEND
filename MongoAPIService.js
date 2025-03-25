@@ -217,6 +217,7 @@ class MongoAPIService {
             console.error('Error connecting to MongoDB:', error);
             throw new Error('Database connection failed');
         }
+
         this.app.use(cors({
             // origin: 'https://triviaproto.netlify.app', // frontend
             origin: 'http://localhost:3000', // frontend
@@ -252,7 +253,7 @@ class MongoAPIService {
                 return res.status(403).json({ authenticated: false, message: 'Invalid token' });
             }
             // Token is valid
-            res.status(200).json({ authenticated: true, user: decoded }); //send the user data back.
+            res.status(200).json({ message : 'user authenticated',  authenticated: true, user: decoded }); //send the user data back.
         });
     }
 
@@ -305,6 +306,16 @@ class MongoAPIService {
 
             //Creates a signed token by jwt, and attach it to httpCookie
             const token = jwt.sign({ userId: user._id, email: user.email }, 'your_jwt_secret_key', { expiresIn: '1h' });
+            res.cookie('userCookie', token, 
+                {
+                    httpOnly: true, 
+                    secure : true, 
+                    sameSite: 'none', 
+                    path : '/', //Specifies where the cookie is kept in the specified domain
+                    domain : 'triviaproto.netlify.app', 
+                    maxAge: 3600000 //1hr ms  -> make these a session cookie
+                });
+            res.status(200).json({ message: 'Login successful', admin: user.admin,   username: user.username});
             // res.cookie('userCookie', token, {httpOnly: true, secure : true, SameSite: 'None'});
 
             res.cookie('userCookie', token, {
