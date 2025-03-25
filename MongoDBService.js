@@ -32,19 +32,35 @@ class MongoDBService {
      * @returns {Promise<MongoClient>} The MongoDB client instance.
      * @throws {Error} If connection to the database fails.
      */
+    // async connect() {
+    //     try {
+    //         if (this.connection) {
+    //             return this.connection;
+    //         }
+
+    //         this.connection = await mongoose.connect(this.uri);
+
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    //     if (this.client) {
+    //         return this.client;
+    //     }
+    // }
     async connect() {
         try {
-            if (this.connection) {
-                return this.connection;
-            }
-
-            this.connection = await mongoose.connect(this.uri);
-
+            if (this.connection) return this.connection;
+            
+            // Added connection options for stability
+            this.connection = await mongoose.connect(this.uri, {
+                useNewUrlParser: true, // Avoids deprecation warning
+                useUnifiedTopology: true // New connection engine
+            });
+            
+            return this.connection;
         } catch (error) {
+            console.error("MongoDB connection error:", error);
             throw error;
-        }
-        if (this.client) {
-            return this.client;
         }
     }
 
