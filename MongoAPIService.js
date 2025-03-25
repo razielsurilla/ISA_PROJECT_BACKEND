@@ -239,6 +239,7 @@ class MongoAPIService {
      * @returns {Promise<void>} - A promise that resolves after authentication.
      */
     authenticate(req, res) {
+        console.log("Authenticating user")
         const token = req.cookies.userCookie; //Uses cookieParser
         
         if (!token) {
