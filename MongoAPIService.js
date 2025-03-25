@@ -345,5 +345,6 @@ class MongoAPIService {
 }
 
 // Start the API
+console.log("Starting API")
 const apiService = new MongoAPIService(3000);
 apiService.start();
