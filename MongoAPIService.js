@@ -242,14 +242,17 @@ class MongoAPIService {
         const token = req.cookies.userCookie; //Uses cookieParser
         
         if (!token) {
+            console.log("No token provided")
             return res.status(401).json({ authenticated: false, message: 'No token provided' });
         }
 
         jwt.verify(token, 'your_jwt_secret_key', (err, decoded) => {
             if (err) {
+                console.log("Error verifying token: ", err)
                 return res.status(403).json({ authenticated: false, message: 'Invalid token' });
             }
             // Token is valid
+            console.log("Token is valid")
             res.status(200).json({ message : 'user authenticated',  authenticated: true, user: decoded }); //send the user data back.
         });
     }
