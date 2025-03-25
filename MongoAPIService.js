@@ -166,6 +166,7 @@ class MongoAPIService {
         this.app.post('/checkUser', (req, res) => this.checkUser(req, res));
         this.app.get('/getUser', (req, res) => this.getUser(req, res));
         this.app.get('/authenticate', (req, res) => this.authenticate(req, res));
+        this.app.delete('/deleteUser', (req, res) => {}) // added back
         
         // 4. NEW Admin Reset Endpoint
         this.app.post('/resetApiRequests', async (req, res) => {
@@ -316,13 +317,12 @@ class MongoAPIService {
                     maxAge: 3600000 //1hr ms  -> make these a session cookie
                 });
             res.status(200).json({ message: 'Login successful', admin: user.admin,   username: user.username});
-            // res.cookie('userCookie', token, {httpOnly: true, secure : true, SameSite: 'None'});
 
             res.cookie('userCookie', token, {
-                httpOnly: true, // Prevents client-side JS access
+                httpOnly: true, 
                 secure: false, // NOTE: Should be true in production (requires HTTPS)
                 sameSite: 'None', // NOTE: Should be 'None' in production if using cross-site
-                maxAge: 3600000 // 1 hour expiration
+                maxAge: 3600000 
             });
 
             res.status(200).json({ message: 'Login successful', admin: user.admin, username: user.username});
