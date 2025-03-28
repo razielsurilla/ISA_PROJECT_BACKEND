@@ -147,6 +147,7 @@ class MongoAPIService {
         this.app.post('/checkUser', (req, res) => this.checkUser(req, res));
         this.app.get('/getUser', (req, res) => this.getUser(req, res));
         this.app.get('/authenticate', (req, res) => this.authenticate(req, res)); 
+        this.app.get('/getApiRequests', (req, res) => this.getApiRequests(req, res));
         this.app.delete('/deleteUser', (req, res) => {})
 
         // Question Service
