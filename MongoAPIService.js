@@ -117,8 +117,8 @@ class MongoAPIService {
                 console.log("Grabing UserSchema")
                 const UserSchema = this.userService.mongoDBService.getSchema('user');
                 console.log("Finding user")
-                console.log(decoded._id)
-                const user = await UserSchema.findById(decoded._id);
+                console.log(decoded.userId)
+                const user = await UserSchema.findById(decoded.userId);
     
                 if (!user) return res.status(404).json({ message: 'User not found' });
                 console.log("User exists?")
