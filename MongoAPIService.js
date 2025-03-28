@@ -112,7 +112,6 @@ class MongoAPIService {
 
                 if (!token) { return res.status(401).json({ message: 'Unauthorized - No token provided' })};
     
-                // NOTE: In production, replace 'your_jwt_secret_key' with process.env.JWT_SECRET
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 const UserSchema = this.userService.mongoDBService.getSchema('user');
                 const user = await UserSchema.findById(decoded.userId);
@@ -160,7 +159,7 @@ class MongoAPIService {
             try {
                 const token = req.cookies.userCookie;
                 // NOTE: Should use process.env.JWT_SECRET in production
-                const decoded = jwt.verify(token, 'your_jwt_secret_key');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 
                 const UserSchema = this.userService.mongoDBService.getSchema('user');
                 const adminUser = await UserSchema.findById(decoded.userId);
