@@ -115,7 +115,7 @@ class MongoAPIService {
                 console.log("Decoding")
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 console.log("Grabing UserSchema")
-                const UserSchema = this.userService.mongoDBService.getSchema('users');
+                const UserSchema = this.userService.mongoDBService.getSchema('user');
                 console.log("Finding user")
                 const user = await UserSchema.findById(decoded.userId);
     
@@ -395,7 +395,7 @@ class MongoAPIService {
                 "Set-Cookie": `userCookie=${token}; HttpOnly; Secure; SameSite=None; Path=/;`, //removed secure, path, sameSite
                 "Content-Type": "application/json",
             });
-            res.end(JSON.stringify({ message: "Logged in successfully" }));
+            res.end(JSON.stringify({ message: "Logged in successfully, token: " + token }));
         } catch (error) {
             res.status(500).json({ message: 'Error logging in: ' + error.message });
         }
