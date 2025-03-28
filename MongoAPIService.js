@@ -138,7 +138,7 @@ class MongoAPIService {
             } catch (error) {
                 // Better error differentiation
                 if (error.name === 'JsonWebTokenError') {
-                    return res.status(401).json({ message: `Invalid token: ${token}` });
+                    return res.status(401).json({ message: `Invalid token: ${error}` });
                 }
                 console.error('API Tracking Error:', error);
                 res.status(500).json({ message: 'Server error tracking API usage' });
