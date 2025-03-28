@@ -111,13 +111,15 @@ class MongoAPIService {
                 console.log(`Token ${token}`)
 
                 if (!token) { return res.status(401).json({ message: 'Unauthorized - No token provided' })};
-    
+                console.log("Decoding")
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                console.log("Grabing user")
                 const UserSchema = this.userService.mongoDBService.getSchema('user');
+                console.log("Finding user")
                 const user = await UserSchema.findById(decoded.userId);
     
                 if (!user) return res.status(404).json({ message: 'User not found' });
-    
+                console.log("User exists?")
                 // API Limit Check
                 if (user.apiRequestsLeft <= 0) {
                     return res.status(429).json({ 
@@ -136,7 +138,7 @@ class MongoAPIService {
             } catch (error) {
                 // Better error differentiation
                 if (error.name === 'JsonWebTokenError') {
-                    return res.status(401).json({ message: 'Invalid token' });
+                    return res.status(401).json({ message: 'Invalid token1' });
                 }
                 console.error('API Tracking Error:', error);
                 res.status(500).json({ message: 'Server error tracking API usage' });
