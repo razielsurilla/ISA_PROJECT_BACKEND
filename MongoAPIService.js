@@ -121,7 +121,7 @@ class MongoAPIService {
                 const user = await UserSchema.findById(decoded.id);
     
                 if (!user) return res.status(404).json({ message: 'User not found' });
-                console.log("User exists?")
+                console.log("User found")
                 // API Limit Check
                 if (user.apiRequestsLeft <= 0) {
                     return res.status(429).json({ 
@@ -161,12 +161,12 @@ class MongoAPIService {
         // 3. Admin Reset Endpoint
         this.app.post('/resetApiRequests', async (req, res) => {
             try {
-                const token = req.cookies.userCookie;
-                // NOTE: Should use process.env.JWT_SECRET in production
+                const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
+
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 
                 const UserSchema = this.userService.mongoDBService.getSchema('user');
-                const adminUser = await UserSchema.findById(decoded.userId);
+                const adminUser = await UserSchema.findById(decoded.id);
                 
                 // Admin check
                 if (!adminUser || !adminUser.admin) {
