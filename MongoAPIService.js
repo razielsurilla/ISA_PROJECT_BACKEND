@@ -11,7 +11,6 @@ const QuestionService = require('./QuestionService.js');
 const cookieParser = require('cookie-parser');
 const salt = bcrypt.genSaltSync(10);
 const hash = bcrypt.hashSync("B4c0/\/", salt);
-const atob = require("atob");
 
 /**
  * User Class 
@@ -146,22 +145,7 @@ class MongoAPIService {
         // User Service
         this.app.post('/createUser', (req, res) => this.createUser(req, res));
         this.app.post('/checkUser', (req, res) => this.checkUser(req, res));
-        // this.app.get('/getUser', (req, res) => this.getUser(req, res));
-        app.get("/getUser", (req, res) => {
-            const token = req.cookies.userCookie; // Extract cookie from request
-        
-            if (!token) {
-                return res.status(401).json({ error: "Unauthorized: No token found" });
-            }
-        
-            try {
-                const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verify and decode
-                return res.json({ email: decoded.email }); // Access email from decoded payload
-            } catch (err) {
-                return res.status(400).json({ error: "Invalid token" }); // Handle invalid token
-            }
-        });
-        
+        this.app.get('/getUser', (req, res) => this.getUser(req, res));
         this.app.get('/authenticate', (req, res) => this.authenticate(req, res)); 
         this.app.delete('/deleteUser', (req, res) => {})
 
@@ -340,6 +324,37 @@ class MongoAPIService {
         } catch (error) {
             res.status(500).json({ message: 'Error retrieving user: ' + error.message });
         }
+    }
+
+    /**
+     * Retrieves a user from the database by email and sends the user data as JSON.
+     * 
+     * @param {object} req - The Express request object containing the user's email in the request body.
+     * @param {object} res - The Express response object used to send the user data or an error message.
+     * @returns {Promise<void>} - A promise that resolves after sending the response.
+     */
+    async getApiRequests(req, res) {
+        // try {
+        //     const result = await this.userService.getUser(req.body.email)
+        //     if (result) {
+        //         result.password = undefined;
+        //     }
+        //     res.status(200).json({message : 'User retrieved successfully', user : result})
+        // } catch (error) {
+        //     res.status(500).json({ message: 'Error retrieving user: ' + error.message });
+        // }
+        const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        const UserSchema = this.userService.mongoDBService.getSchema('user');
+        const requestCount = await UserSchema.findById(decoded.id);
+        
+        // // Admin check
+        // if (!requestCount || !requestCount.apiRequestsLeft) {
+            
+        // }
+        return res.status(403).json({ message: requestCount.apiRequestsLeft });
     }
 }
 
