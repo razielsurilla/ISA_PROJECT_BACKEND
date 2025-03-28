@@ -104,9 +104,8 @@ class MongoAPIService {
         this.app.delete('/deleteUser', (req, res) => {})
 
         // Question Service
-        this.app.post('/createQuestion', (req, res) => {
-            this.questionService.createQuestion(req, res)
-        });
+        this.app.post('/createQuestion', (req, res) => {this.questionService.createQuestion(req, res)});
+        this.app.put('/updateQuestion', (req, res) => {this.questionService.updateQuestion(req, res)})
     }
 
     // defineRoutes() {
