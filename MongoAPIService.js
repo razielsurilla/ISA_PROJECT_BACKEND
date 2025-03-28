@@ -107,7 +107,8 @@ class MongoAPIService {
     
             try {
                 console.log('Definee routes cookie')
-                const token = req.headers.cookie;
+                // const token = req.headers.cookie;
+                const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
                 console.log(`Token ${token}`)
 
                 if (!token) { return res.status(401).json({ message: 'Unauthorized - No token provided' })};
