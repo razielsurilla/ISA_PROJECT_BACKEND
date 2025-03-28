@@ -107,17 +107,11 @@ class MongoAPIService {
     
             try {
                 console.log('Definee routes cookie')
-                // const token = req.headers.cookie;
                 const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
-                console.log(`Token ${token}`)
 
                 if (!token) { return res.status(401).json({ message: 'Unauthorized - No token provided' })};
-                console.log("Decoding")
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
-                console.log("Grabing UserSchema")
                 const UserSchema = this.userService.mongoDBService.getSchema('user');
-                console.log("Finding user")
-                console.log(decoded.id)
                 const user = await UserSchema.findById(decoded.id);
     
                 if (!user) return res.status(404).json({ message: 'User not found' });
@@ -140,7 +134,8 @@ class MongoAPIService {
             } catch (error) {
                 // Better error differentiation
                 if (error.name === 'JsonWebTokenError') {
-                    return res.status(401).json({ message: `Invalid token: ${error}` });
+                    console.log(`JsonWebTokenError: ${error}`)
+                    return res.status(401).json({ message: 'Invalid token' });
                 }
                 console.error('API Tracking Error:', error);
                 res.status(500).json({ message: 'Server error tracking API usage' });
@@ -193,96 +188,6 @@ class MongoAPIService {
         });
     }
 
-    // defineRoutes() {
-    //     // Middleware executes in order, so this must come before routes it protects
-    //     this.app.use(async (req, res, next) => {
-    //         if (req.method === 'OPTIONS') return next(); // Skip preflight requests
-            
-    //         // Skip auth for these public routes
-    //         if (req.path === '/createUser' || req.path === '/checkUser') {
-    //             return next();
-    //         }
-    
-    //         try {
-    //             console.log('Definee routes cookie')
-    //             const token = req.headers.cookie;
-    //             console.log(`Token ${token}`)
-
-    //             if (!token) { return res.status(401).json({ message: 'Unauthorized - No token provided' })};
-    
-    //             // NOTE: In production, replace 'your_jwt_secret_key' with process.env.JWT_SECRET
-    //             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    //             const UserSchema = this.userService.mongoDBService.getSchema('user');
-    //             const user = await UserSchema.findById(decoded.userId);
-    
-    //             if (!user) return res.status(404).json({ message: 'User not found' });
-    
-    //             // API Limit Check
-    //             if (user.apiRequestsLeft <= 0) {
-    //                 return res.status(429).json({ 
-    //                     message: 'API limit reached',
-    //                     detail: 'You have used all 20 API requests'
-    //                 });
-    //             }
-    
-    //             // Decrement counter
-    //             user.apiRequestsLeft -= 1;
-    //             await user.save();
-    
-    //             // Add remaining count to headers for frontend
-    //             res.set('X-API-Requests-Remaining', user.apiRequestsLeft);
-    //             next();
-    //         } catch (error) {
-    //             // Better error differentiation
-    //             if (error.name === 'JsonWebTokenError') {
-    //                 return res.status(401).json({ message: 'Invalid token' });
-    //             }
-    //             console.error('API Tracking Error:', error);
-    //             res.status(500).json({ message: 'Server error tracking API usage' });
-    //         }
-    //     });
-    
-    //     // 2. Routes - NOW PROTECTED BY MIDDLEWARE
-    //     this.app.post('/createUser', (req, res) => this.createUser(req, res));
-    //     this.app.post('/checkUser', (req, res) => this.checkUser(req, res));
-    //     this.app.get('/getUser', (req, res) => this.getUser(req, res));
-    //     this.app.get('/authenticate', (req, res) => this.authenticate(req, res));
-    //     this.app.delete('/deleteUser', (req, res) => {}) // added back
-        
-    //     // 3. Admin Reset Endpoint
-    //     this.app.post('/resetApiRequests', async (req, res) => {
-    //         try {
-    //             const token = req.cookies.userCookie;
-    //             // NOTE: Should use process.env.JWT_SECRET in production
-    //             const decoded = jwt.verify(token, 'your_jwt_secret_key');
-                
-    //             const UserSchema = this.userService.mongoDBService.getSchema('user');
-    //             const adminUser = await UserSchema.findById(decoded.userId);
-                
-    //             // Admin check
-    //             if (!adminUser || !adminUser.admin) {
-    //                 return res.status(403).json({ message: 'Admin access required' });
-    //             }
-    
-    //             const { email } = req.body;
-    //             const user = await UserSchema.findOne({ email });
-    //             if (!user) return res.status(404).json({ message: 'User not found' });
-    
-    //             // Reset logic
-    //             user.apiRequestsLeft = 20;
-    //             await user.save();
-    
-    //             res.status(200).json({ 
-    //                 message: 'API requests reset to 20',
-    //                 user: user.email,
-    //                 requestsLeft: user.apiRequestsLeft
-    //             });
-    //         } catch (error) {
-    //             console.error('Reset Error:', error);
-    //             res.status(500).json({ message: 'Error resetting API requests' });
-    //         }
-    //     });
-    // }
 
     /**
      * Starts express server
@@ -396,7 +301,7 @@ class MongoAPIService {
                 "Set-Cookie": `userCookie=${token}; HttpOnly; Secure; SameSite=None; Path=/;`, //removed secure, path, sameSite
                 "Content-Type": "application/json",
             });
-            res.end(JSON.stringify({ message: "Logged in successfully, token: " + token }));
+            res.end(JSON.stringify({ message: "Logged in successfully" }));
         } catch (error) {
             res.status(500).json({ message: 'Error logging in: ' + error.message });
         }
