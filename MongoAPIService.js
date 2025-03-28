@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const express = require('express')
 const MongoDBService = require('./MongoDBService.js');
 const mongoose = require('mongoose');
+const QuestionService = require('./QuestionService.js');
 
 // const User = require('./User.js')
 const cookieParser = require('cookie-parser');
@@ -70,11 +71,14 @@ class MongoAPIService {
      * @param {number} port - The port number to listen on
      */
     constructor(port) {
+        //Services
         this.mongoDBService = new MongoDBService();
         this.userService = new User(this.mongoDBService);
+        this.questionService = new QuestionService(this.mongoDBService);
+
+        // Server
         this.app = express();
         this.port = process.env.PORT || port;
-
         this.app.use(express.json());
         this.app.use(express.urlencoded({ extended: true }));
     }
@@ -92,11 +96,17 @@ class MongoAPIService {
             allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
         }));
 
+        // User Service
         this.app.post('/createUser', (req, res) => this.createUser(req, res));
         this.app.post('/checkUser', (req, res) => this.checkUser(req, res));
         this.app.get('/getUser', (req, res) => this.getUser(req, res));
         this.app.get('/authenticate', (req, res) => this.authenticate(req, res)); 
         this.app.delete('/deleteUser', (req, res) => {})
+
+        // Question Service
+        this.app.post('/createQuestion', (req, res) => {
+            this.questionService.createQuestion(req, res)
+        });
     }
 
     // defineRoutes() {
@@ -233,7 +243,6 @@ class MongoAPIService {
      */
     authenticate(req, res) {
         const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
-        console.log(`Recieved token : ${token}`);
 
         if (!token) {   
             return res.status(401).json({ message: 'No token provided' });
@@ -299,7 +308,6 @@ class MongoAPIService {
                 { expiresIn: '1h' }
             );
 
-            console.log(`Sent token: ${token}`)
             res.writeHead(200, {
                 "Set-Cookie": `userCookie=${token}; HttpOnly; Secure; SameSite=None; Path=/;`, //removed secure, path, sameSite
                 "Content-Type": "application/json",
