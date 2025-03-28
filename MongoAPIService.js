@@ -114,8 +114,8 @@ class MongoAPIService {
                 if (!token) { return res.status(401).json({ message: 'Unauthorized - No token provided' })};
                 console.log("Decoding")
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
-                console.log("Grabing user")
-                const UserSchema = this.userService.mongoDBService.getSchema('user');
+                console.log("Grabing UserSchema")
+                const UserSchema = this.userService.mongoDBService.getSchema('users');
                 console.log("Finding user")
                 const user = await UserSchema.findById(decoded.userId);
     
