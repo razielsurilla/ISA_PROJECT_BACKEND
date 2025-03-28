@@ -11,6 +11,7 @@ const QuestionService = require('./QuestionService.js');
 const cookieParser = require('cookie-parser');
 const salt = bcrypt.genSaltSync(10);
 const hash = bcrypt.hashSync("B4c0/\/", salt);
+const atob = require("atob");
 
 /**
  * User Class 
@@ -145,7 +146,22 @@ class MongoAPIService {
         // User Service
         this.app.post('/createUser', (req, res) => this.createUser(req, res));
         this.app.post('/checkUser', (req, res) => this.checkUser(req, res));
-        this.app.get('/getUser', (req, res) => this.getUser(req, res));
+        // this.app.get('/getUser', (req, res) => this.getUser(req, res));
+        app.get("/getUser", (req, res) => {
+            const token = req.cookies.userCookie; // Extract cookie from request
+        
+            if (!token) {
+                return res.status(401).json({ error: "Unauthorized: No token found" });
+            }
+        
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verify and decode
+                return res.json({ email: decoded.email }); // Access email from decoded payload
+            } catch (err) {
+                return res.status(400).json({ error: "Invalid token" }); // Handle invalid token
+            }
+        });
+        
         this.app.get('/authenticate', (req, res) => this.authenticate(req, res)); 
         this.app.delete('/deleteUser', (req, res) => {})
 
