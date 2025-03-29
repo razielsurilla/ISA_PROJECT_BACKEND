@@ -97,50 +97,7 @@ class MongoAPIService {
         }));
 
         // Middleware executes in order, so this must come before routes it protects
-        this.app.use(async (req, res, next) => {
-            if (req.method === 'OPTIONS') return next(); // Skip preflight requests
-            
-            // Skip auth for these public routes
-            if (req.path === '/createUser' || req.path === '/checkUser') {
-                return next();
-            }
-    
-            try {
-                console.log('Definee routes cookie')
-                const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
-
-                if (!token) { return res.status(401).json({ message: 'Unauthorized - No token provided' })};
-                const decoded = jwt.verify(token, process.env.JWT_SECRET);
-                const UserSchema = this.userService.mongoDBService.getSchema('user');
-                const user = await UserSchema.findById(decoded.id);
-    
-                if (!user) return res.status(404).json({ message: 'User not found' });
-                console.log("User found")
-                // API Limit Check
-                if (user.apiRequestsLeft <= 0) {
-                    return res.status(429).json({ 
-                        message: 'API limit reached',
-                        detail: 'You have used all 20 API requests'
-                    });
-                }
-    
-                // Decrement counter
-                user.apiRequestsLeft -= 1;
-                await user.save();
-    
-                // Add remaining count to headers for frontend
-                res.set('X-API-Requests-Remaining', user.apiRequestsLeft);
-                next();
-            } catch (error) {
-                // Better error differentiation
-                if (error.name === 'JsonWebTokenError') {
-                    console.log(`JsonWebTokenError: ${error}`)
-                    return res.status(401).json({ message: 'Invalid token' });
-                }
-                console.error('API Tracking Error:', error);
-                res.status(500).json({ message: 'Server error tracking API usage' });
-            }
-        });
+        this.app.use((req, res, next) => this.apiUsageMiddleware(req, res, next));
 
         // User Service
         this.app.post('/createUser', (req, res) => this.createUser(req, res));
@@ -153,7 +110,7 @@ class MongoAPIService {
         this.app.post('/createQuestion', (req, res) => {this.questionService.createQuestion(req, res)});
         this.app.put('/updateQuestion', (req, res) => {this.questionService.updateQuestion(req, res)})
 
-        // 3. Admin Reset Endpoint
+        // Admin Reset Endpoint
         this.app.post('/resetApiRequests', async (req, res) => {
             try {
                 const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
@@ -188,12 +145,56 @@ class MongoAPIService {
         });
     }
 
+    async apiUsageMiddleware(req, res, next){
+        if (req.method === 'OPTIONS') return next(); // Skip preflight requests
+            
+        // Skip auth for these public routes
+        //Create a list of paths that we do note use.
+        if (req.path === '/createUser' || req.path === '/checkUser' || req.path == '/authenticate') {
+            return next();
+        }
+
+        try {
+            const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
+
+            if (!token) { 
+                return res.status(401).json({ message: 'Unauthorized - No token provided' })
+            };
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const UserSchema = this.userService.mongoDBService.getSchema('user');
+            const user = await UserSchema.findById(decoded.id);
+
+            if (!user) return res.status(404).json({ message: 'User not found' });
+
+            // API Limit Check
+            if (user.apiRequestsLeft <= 0) {
+                return res.status(429).json({ 
+                    message: 'API limit reached',
+                    detail: 'You have used all 20 API requests'
+                });
+            }
+
+            // Decrement counter
+            user.apiRequestsLeft -= 1;
+            await user.save();
+
+            // Add remaining count to headers for frontend
+            res.set('X-API-Requests-Remaining', user.apiRequestsLeft);
+            next();
+        } catch (error) {
+            // Better error differentiation
+            if (error.name === 'JsonWebTokenError') {
+                return res.status(401).json({ message: 'Invalid token' });
+            }
+            res.status(500).json({ message: 'Server error tracking API usage' });
+        }
+    }
 
     /**
      * Starts express server
      * Defines API routes
      */
-    async start() {
+    async start(req ,res, next) {
         try {
             if (this.connection) {
                 return this.connection;
