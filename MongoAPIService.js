@@ -105,47 +105,65 @@ class MongoAPIService {
         this.app.get('/getUser', (req, res) => this.getUser(req, res));
         this.app.get('/authenticate', (req, res) => this.authenticate(req, res)); 
         this.app.get('/getApiRequests', (req, res) => this.getApiRequests(req, res));
-        this.app.delete('/deleteUser', (req, res) => {})
+        this.app.delete('/deleteUser', (req, res) => {});
 
         // Question Service
         this.app.post('/createQuestion', (req, res) => {this.questionService.createQuestion(req, res)});
-        this.app.put('/updateQuestion', (req, res) => {this.questionService.updateQuestion(req, res)})
+        this.app.put('/updateQuestion', (req, res) => {this.questionService.updateQuestion(req, res)});
+        this.app.get('/getQuestion/:id', (req, res) => {this.questionService.getQuestion(req, res)});
 
         // Admin Reset Endpoint
-        this.app.post('/resetApiRequests', async (req, res) => {
-            try {
-                const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
-
-                const decoded = jwt.verify(token, process.env.JWT_SECRET);
-                
-                const UserSchema = this.userService.mongoDBService.getSchema('user');
-                const adminUser = await UserSchema.findById(decoded.id);
-                
-                // Admin check
-                if (!adminUser || !adminUser.admin) {
-                    return res.status(403).json({ message: 'Admin access required' });
-                }
-    
-                const { email } = req.body;
-                const user = await UserSchema.findOne({ email });
-                if (!user) return res.status(404).json({ message: 'User not found' });
-    
-                // Reset logic
-                user.apiRequestsLeft = 20;
-                await user.save();
-    
-                res.status(200).json({ 
-                    message: 'API requests reset to 20',
-                    user: user.email,
-                    requestsLeft: user.apiRequestsLeft
-                });
-            } catch (error) {
-                console.error('Reset Error:', error);
-                res.status(500).json({ message: 'Error resetting API requests' });
-            }
-        });
+        this.app.post('/resetApiRequests', (req, res) => {this.resetApiRequests(req, res)});
     }
 
+    /**
+     * Allows Admin users to reset the api count on a user.
+     * 
+     * @param {object} req as express request object
+     * @param {object} res as express response object
+     * @returns 
+     */
+    async resetApiRequests(req ,res){
+        try {
+            const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
+
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            
+            const UserSchema = this.userService.mongoDBService.getSchema('user');
+            const adminUser = await UserSchema.findById(decoded.id);
+            
+            // Admin check
+            if (!adminUser || !adminUser.admin) {
+                return res.status(403).json({ message: 'Admin access required' });
+            }
+
+            const { email } = req.body;
+            const user = await UserSchema.findOne({ email });
+            if (!user) return res.status(404).json({ message: 'User not found' });
+
+            // Reset logic
+            user.apiRequestsLeft = 20;
+            await user.save();
+
+            res.status(200).json({ 
+                message: 'API requests reset to 20',
+                user: user.email,
+                requestsLeft: user.apiRequestsLeft
+            });
+        } catch (error) {
+            console.error('Reset Error:', error);
+            res.status(500).json({ message: 'Error resetting API requests' });
+        }
+    }
+
+    /**
+     * Middleware that handles apiCounts for the user.
+     * 
+     * @param {object} req as express request object
+     * @param {object} res as express response object
+     * @param {object} next as express next object
+     * @returns 
+     */
     async apiUsageMiddleware(req, res, next){
         if (req.method === 'OPTIONS') return next(); // Skip preflight requests
             
