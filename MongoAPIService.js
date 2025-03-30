@@ -170,7 +170,7 @@ class MongoAPIService {
             
         // Skip auth for these public routes
         //Create a list of paths that we do note use.
-        if (req.path === '/createUser' || req.path === '/checkUser' || req.path == '/authenticate' || req.path ==='/getUser') {
+        if (req.path === '/createUser' || req.path === '/checkUser' || req.path == '/authenticate' || req.path ==='/getUser' || req.path ==='/logout') {
             return next();
         }
 
