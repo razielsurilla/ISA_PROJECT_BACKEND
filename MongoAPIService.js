@@ -165,6 +165,7 @@ class MongoAPIService {
      * @returns 
      */
     async apiUsageMiddleware(req, res, next){
+        console.log(req.method);
         if (req.method === 'OPTIONS') return next(); // Skip preflight requests
             
         // Skip auth for these public routes
