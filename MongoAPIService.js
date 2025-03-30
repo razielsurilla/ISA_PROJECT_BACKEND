@@ -102,6 +102,7 @@ class MongoAPIService {
         // User Service
         this.app.post('/createUser', (req, res) => this.createUser(req, res));
         this.app.post('/checkUser', (req, res) => this.checkUser(req, res));
+        this.app.post('/logout', (req, res) => this.logout(req, res));
         this.app.get('/getUser', (req, res) => this.getUser(req, res));
         this.app.get('/authenticate', (req, res) => this.authenticate(req, res)); 
         this.app.get('/getApiRequests', (req, res) => this.getApiRequests(req, res));
@@ -372,6 +373,28 @@ class MongoAPIService {
                 return res.status(401).json({ message: 'Invalid token' });
             }
             return res.status(500).json({ message: 'Server error retrieving user data' });
+        }
+    }
+
+    /**
+     * Logs out the user by clearing the authentication cookie
+     * 
+     * @param {object} req - The Express request object
+     * @param {object} res - The Express response object
+     * @returns {Promise<void>} - A promise that resolves after logging out
+     */
+    async logout(req, res) {
+        try {
+            // Clear the cookie by setting an expired cookie with same name
+            res.writeHead(200, {
+                "Set-Cookie": `userCookie=; HttpOnly; Secure; SameSite=None; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT;`,
+                "Content-Type": "application/json",
+            });
+            
+            res.end(JSON.stringify({ message: "Logged out successfully" }));
+        } catch (error) {
+            console.error('Logout error:', error);
+            res.status(500).json({ message: 'Error logging out' });
         }
     }
 }
