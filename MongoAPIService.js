@@ -165,8 +165,6 @@ class MongoAPIService {
      * @returns 
      */
     async apiUsageMiddleware(req, res, next){
-        console.log(req.method);
-        console.log(req.path);
         if (req.method === 'OPTIONS') return next(); // Skip preflight requests
             
         // Skip auth for these public routes
@@ -336,26 +334,8 @@ class MongoAPIService {
      * @param {object} res - The Express response object used to send the user data or an error message.
      * @returns {Promise<void>} - A promise that resolves after sending the response.
      */
-    // async getUser(req, res) {
-    //     try {
-    //         const result = await this.userService.getUser(req.body.email)
-    //         if (result) {
-    //             result.password = undefined;
-    //         }
-    //         res.status(200).json({message : 'User retrieved successfully', user : result})
-    //     } catch (error) {
-    //         res.status(500).json({ message: 'Error retrieving user: ' + error.message });
-    //     }
-    // }
-
-
     async getUser(req, res) {
         try {
-            // Skip if it's a preflight request
-            if (req.method === 'OPTIONS') {
-                return res.status(200).end();
-            }
-    
             // Parse the cookie
             const token = req.headers.cookie?.split('=')[1];
             
@@ -380,9 +360,6 @@ class MongoAPIService {
                 admin: user.admin,
                 apiRequestsLeft: user.apiRequestsLeft
             };
-    
-            // Set the API usage header
-            res.set('X-API-Requests-Remaining', user.apiRequestsLeft);
             
             // Return the user data
             return res.status(200).json({ 
