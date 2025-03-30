@@ -334,48 +334,67 @@ class MongoAPIService {
      * @param {object} res - The Express response object used to send the user data or an error message.
      * @returns {Promise<void>} - A promise that resolves after sending the response.
      */
+    // async getUser(req, res) {
+    //     try {
+    //         const result = await this.userService.getUser(req.body.email)
+    //         if (result) {
+    //             result.password = undefined;
+    //         }
+    //         res.status(200).json({message : 'User retrieved successfully', user : result})
+    //     } catch (error) {
+    //         res.status(500).json({ message: 'Error retrieving user: ' + error.message });
+    //     }
+    // }
+
+
     async getUser(req, res) {
         try {
-            const result = await this.userService.getUser(req.body.email)
-            if (result) {
-                result.password = undefined;
+            // Skip if it's a preflight request
+            if (req.method === 'OPTIONS') {
+                return res.status(200).end();
             }
-            res.status(200).json({message : 'User retrieved successfully', user : result})
+    
+            // Parse the cookie
+            const token = req.headers.cookie?.split('=')[1];
+            
+            if (!token) { 
+                return res.status(401).json({ message: 'Unauthorized - No token provided' });
+            }
+    
+            // Verify token and get user
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const UserSchema = this.userService.mongoDBService.getSchema('user');
+            const user = await UserSchema.findById(decoded.id);
+    
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+    
+            // Return full user data (excluding sensitive fields)
+            const userData = {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                admin: user.admin,
+                apiRequestsLeft: user.apiRequestsLeft
+            };
+    
+            // Set the API usage header
+            res.set('X-API-Requests-Remaining', user.apiRequestsLeft);
+            
+            // Return the user data
+            return res.status(200).json({ 
+                user: userData,
+                message: 'User data retrieved successfully'
+            });
+    
         } catch (error) {
-            res.status(500).json({ message: 'Error retrieving user: ' + error.message });
+            if (error instanceof jwt.JsonWebTokenError) {
+                return res.status(401).json({ message: 'Invalid token' });
+            }
+            return res.status(500).json({ message: 'Server error retrieving user data' });
         }
     }
-
-    // /**
-    //  * Retrieves a user from the database by email and sends the user data as JSON.
-    //  * 
-    //  * @param {object} req - The Express request object containing the user's email in the request body.
-    //  * @param {object} res - The Express response object used to send the user data or an error message.
-    //  * @returns {Promise<void>} - A promise that resolves after sending the response.
-    //  */
-    // async getApiRequests(req, res) {
-    //     // try {
-    //     //     const result = await this.userService.getUser(req.body.email)
-    //     //     if (result) {
-    //     //         result.password = undefined;
-    //     //     }
-    //     //     res.status(200).json({message : 'User retrieved successfully', user : result})
-    //     // } catch (error) {
-    //     //     res.status(500).json({ message: 'Error retrieving user: ' + error.message });
-    //     // }
-    //     const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
-
-    //     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-    //     const UserSchema = this.userService.mongoDBService.getSchema('user');
-    //     const requestCount = await UserSchema.findById(decoded.id);
-        
-    //     // // Admin check
-    //     // if (!requestCount || !requestCount.apiRequestsLeft) {
-            
-    //     // }
-    //     return res.status(403).json({ message: requestCount.apiRequestsLeft });
-    // }
 }
 
 // Start the API
