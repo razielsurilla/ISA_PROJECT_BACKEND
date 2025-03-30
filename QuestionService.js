@@ -45,7 +45,6 @@ class QuestionService{
 
                 //check if audio byte data exists
                 if (!answerAudio || !questionAudio) {
-                    console.log(`Audio Doesn't exists`)
                     const data = await this.aiServerRequest(question, answer);
 
                     //update object
@@ -72,7 +71,6 @@ class QuestionService{
                     });
                 } else {
                     try {
-                        console.log('Audio Exists');
                         res.status(200).json({ 
                             message : '200 Audio Retrieved successfully', 
                             questionAudio : questionAudio, 
@@ -89,8 +87,16 @@ class QuestionService{
         } else {
             res.status(422).json({ message: "422 Improper ID Length" });
         }
-    }
+    }   
 
+    /**
+     * Makes a post request to our AI tts converter to 
+     * convert the question and answer string into a speeched version. 
+     * 
+     * @param {string} question 
+     * @param {string} answer  
+     * @returns audio byte version of question and answer strings
+     */
     async aiServerRequest(question, answer) {
         try {
             const response = await axios.post('http://localhost:8000/tts/', { question, answer }, {
@@ -136,7 +142,11 @@ class QuestionService{
                 if (Category) updateObject.Category = Category;
                 if (Question) updateObject.Question = Question;
                 if (Answer) updateObject.Answer = Answer;
-        
+
+                //empty out audios
+                updateObject.Question_Audio = "";
+                updateObject.Answer_Audio = "";
+
                 // Use findByIdAndUpdate to update the document
                 const updatedQuestion = await triviaStyleSchema.findByIdAndUpdate(
                     _id,
@@ -162,9 +172,30 @@ class QuestionService{
         }
     }
 
-    async deleteQuestion(){
-
+    
+    async deleteQuestion(req, res) {
+        const questionId = req.params.id;
+        // Validate question ID
+        if (!mongoose.Types.ObjectId.isValid(questionId)) {
+            return res.status(422).json({ message: `422 Improper ID Length` });
+        }
+    
+        try {
+            const triviaStyleSchema = this.mongoDBService.getSchema('trivia_style');
+    
+            // Find and delete the question
+            const deletedQuestion = await triviaStyleSchema.findByIdAndDelete(questionId);
+    
+            if (!deletedQuestion) {
+                return res.status(404).json({ message: `404 Question of ID ${questionId} does not exist` });
+            }
+    
+            return res.status(200).json({ message: `Question with ID ${questionId} deleted successfully` });
+        } catch (e) {
+            return res.status(500).json({ message: `500 Internal Server Error` });
+        }
     }
+    
 
     /**
      * Creates a trivia style question into the database

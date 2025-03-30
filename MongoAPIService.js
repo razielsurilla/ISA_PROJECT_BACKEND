@@ -106,13 +106,14 @@ class MongoAPIService {
         this.app.get('/getUser', (req, res) => this.getUser(req, res));
         this.app.get('/authenticate', (req, res) => this.authenticate(req, res)); 
         this.app.get('/getApiRequests', (req, res) => this.getApiRequests(req, res));
-        this.app.delete('/deleteUser', (req, res) => {});
+
 
         // Question Service
         this.app.post('/createQuestion', (req, res) => {this.questionService.createQuestion(req, res)});
         this.app.put('/updateQuestion', (req, res) => {this.questionService.updateQuestion(req, res)});
         this.app.get('/getQuestion/:id', (req, res) => {this.questionService.getQuestion(req, res)});
-
+        this.app.delete('/deleteQuestion/:id', (req, res) => {this.questionService.deleteQuestion(req, res)});
+        
         // Admin Reset Endpoint
         this.app.post('/resetApiRequests', (req, res) => {this.resetApiRequests(req, res)});
     }
@@ -152,7 +153,6 @@ class MongoAPIService {
                 requestsLeft: user.apiRequestsLeft
             });
         } catch (error) {
-            console.error('Reset Error:', error);
             res.status(500).json({ message: 'Error resetting API requests' });
         }
     }
@@ -175,7 +175,8 @@ class MongoAPIService {
         }
 
         try {
-            const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
+            //attempst to retrieve jwt token
+            const token = req.headers.cookie?.split("=")[1];
 
             if (!token) { 
                 return res.status(401).json({ message: 'Unauthorized - No token provided' })
