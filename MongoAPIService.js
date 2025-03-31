@@ -531,33 +531,6 @@ class MongoAPIService {
         }
     }
 
-    // // New method to get all users
-    // async getAllUsers(req, res) {
-    //     try {
-    //         const token = req.headers.cookie?.split("=")[1];
-    //         if (!token) {
-    //             return res.status(401).json({ message: 'Unauthorized' });
-    //         }
-
-    //         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    //         const UserSchema = this.userService.mongoDBService.getSchema('user');
-            
-    //         // Verify requesting user is admin
-    //         const adminUser = await UserSchema.findById(decoded.id);
-    //         if (!adminUser || !adminUser.admin) {
-    //             return res.status(403).json({ message: 'Admin access required' });
-    //         }
-
-    //         // Get all users (excluding passwords)
-    //         const users = await UserSchema.find({}, { password: 0 });
-    //         res.status(200).json({ users });
-            
-    //     } catch (error) {
-    //         console.error('Error fetching users:', error);
-    //         res.status(500).json({ message: 'Error fetching users' });
-    //     }
-    // }
-
     async getAllUsers(req, res) {
         try {
             const token = req.headers.cookie?.split("=")[1];
