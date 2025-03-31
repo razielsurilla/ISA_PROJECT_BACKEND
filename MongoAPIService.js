@@ -16,6 +16,127 @@ const hash = bcrypt.hashSync("B4c0/\/", salt);
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
+
+/**
+ * API Statistics Class to track endpoint usage
+ */
+class ApiStats {
+    constructor(mongoDBService) {
+        this.mongoDBService = mongoDBService;
+        this.mongoDBService.createSchema('apiStats', {
+            method: { type: String, required: true },
+            endpoint: { type: String, required: true },
+            requests: { type: Number, default: 0 },
+            lastAccessed: { type: Date, default: Date.now }
+        });
+    }
+
+    async recordRequest(method, path) {
+        try {
+            // Normalize the endpoint (remove IDs for /getQuestion/:id, etc.)
+            let endpoint = path;
+            if (path.startsWith('/getQuestion/')) {
+                endpoint = '/getQuestion/';
+            } else if (path.startsWith('/deleteQuestion/')) {
+                endpoint = '/deleteQuestion/';
+            }
+            // /updateQuestion and /createQuestion don't need normalization
+
+            const ApiStatsSchema = this.mongoDBService.getSchema('apiStats');
+            const stats = await ApiStatsSchema.findOneAndUpdate(
+                { method, endpoint },
+                { 
+                    $inc: { requests: 1 },
+                    $set: { lastAccessed: Date.now() }
+                },
+                { upsert: true, new: true }
+            );
+            return stats;
+        } catch (error) {
+            console.error('Error recording API stats:', error);
+            throw error;
+        }
+    }
+
+    async getStats() {
+        try {
+            const ApiStatsSchema = this.mongoDBService.getSchema('apiStats');
+            const stats = await ApiStatsSchema.find().sort({ requests: -1 });
+            return stats;
+        } catch (error) {
+            console.error('Error getting API stats:', error);
+            throw error;
+        }
+    }
+}
+
+/**
+ * API Usage Class to track API requests
+ */
+class ApiUsage {
+    constructor(mongoDBService) {
+        this.mongoDBService = mongoDBService;
+        this.mongoDBService.createSchema('apiUsage', {
+            userId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
+            requestsLeft: { type: Number, default: 20 },
+            totalRequests: { type: Number, default: 0 },
+            lastReset: { type: Date, default: Date.now }
+        });
+    }
+
+    async getUsage(userId) {
+        try {
+            const ApiUsageSchema = this.mongoDBService.getSchema('apiUsage');
+            let usage = await ApiUsageSchema.findOne({ userId });
+            
+            if (!usage) {
+                usage = new ApiUsageSchema({ userId });
+                await usage.save();
+            }
+            
+            return usage;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async decrementRequests(userId) {
+        try {
+            const ApiUsageSchema = this.mongoDBService.getSchema('apiUsage');
+            const usage = await ApiUsageSchema.findOneAndUpdate(
+                { userId },
+                { 
+                    $inc: { 
+                        requestsLeft: -1,
+                        totalRequests: 1 
+                    } 
+                },
+                { new: true, upsert: true }
+            );
+            return usage;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async resetRequests(userId) {
+        try {
+            const ApiUsageSchema = this.mongoDBService.getSchema('apiUsage');
+            const usage = await ApiUsageSchema.findOneAndUpdate(
+                { userId },
+                { 
+                    requestsLeft: 20,
+                    lastReset: Date.now()
+                },
+                { new: true, upsert: true }
+            );
+            return usage;
+        } catch (error) {
+            throw error;
+        }
+    }
+}
+
 /**
  * User Class 
  */
@@ -27,7 +148,6 @@ class User {
             email : {type : String, required : true},
             password : {type : String, required: true},
             admin: {type: Boolean, default: false},
-            apiRequestsLeft: { type: Number, default: 20 }  // Track API request usage
         });
     }
 
@@ -79,6 +199,8 @@ class MongoAPIService {
         this.mongoDBService = new MongoDBService();
         this.userService = new User(this.mongoDBService);
         this.questionService = new QuestionService(this.mongoDBService);
+        this.apiUsageService = new ApiUsage(this.mongoDBService); // Add this line
+        this.apiStatsService = new ApiStats(this.mongoDBService); // Add this line
 
         // Server
         this.app = express();
@@ -134,6 +256,10 @@ class MongoAPIService {
 
         // Middleware executes in order, so this must come before routes it protects
         this.app.use((req, res, next) => this.apiUsageMiddleware(req, res, next));
+        this.app.use((req, res, next) => this.apiStatsMiddleware(req, res, next));
+        
+        // Add this with your other routes
+        this.app.get('/getApiStats', (req, res) => this.getApiStats(req, res));
 
         // User Service
         this.app.post('/createUser', (req, res) => this.createUser(req, res));
@@ -144,6 +270,7 @@ class MongoAPIService {
         this.app.get('/authenticate', (req, res) => this.authenticate(req, res)); 
         this.app.get('/getApiRequests', (req, res) => this.getApiRequests(req, res));
         this.app.delete('/deleteUser/:id', (req, res) => this.deleteUser(req, res));
+        this.app.get('/getApiRequests', (req, res) => this.getApiRequests(req, res));
 
 
         // Question Service
@@ -272,23 +399,116 @@ class MongoAPIService {
         this.app.post('/resetApiRequests', (req, res) => {this.resetApiRequests(req, res)});
     }
 
-    /**
-     * Allows Admin users to reset the api count on a user.
-     * 
-     * @param {object} req as express request object
-     * @param {object} res as express response object
-     * @returns 
-     */
-    async resetApiRequests(req ,res){
+    async apiStatsMiddleware(req, res, next) {
         try {
-            const token = req.headers.cookie?.split("=")[1]; //parse the cookie ourselves
+            // Only track these question-related endpoints
+            const trackedEndpoints = [
+                '/getQuestion',
+                '/deleteQuestion',
+                '/updateQuestion',
+                '/createQuestion'
+            ];
+            
+            // Check if the request path starts with any of our tracked endpoints
+            const shouldTrack = trackedEndpoints.some(endpoint => 
+                req.path.startsWith(endpoint)
+            );
+            
+            if (!shouldTrack) {
+                return next();
+            }
+    
+            await this.apiStatsService.recordRequest(req.method, req.path);
+            next();
+        } catch (error) {
+            console.error('API stats middleware error:', error);
+            next(); // Don't block the request if stats tracking fails
+        }
+    }
 
+    async apiUsageMiddleware(req, res, next) {
+        if (req.method === 'OPTIONS') return next();
+        
+        // Only track these question-related endpoints
+        const trackedEndpoints = [
+            '/getQuestion',
+            '/deleteQuestion',
+            '/updateQuestion',
+            '/createQuestion'
+        ];
+        
+        // Check if the request path starts with any of our tracked endpoints
+        const shouldTrack = trackedEndpoints.some(endpoint => 
+            req.path.startsWith(endpoint)
+        );
+        
+        if (!shouldTrack) {
+            return next();
+        }
+    
+        try {
+            const token = req.headers.cookie?.split("=")[1];
+            if (!token) { 
+                return res.status(401).json({ message: 'Unauthorized - No token provided' });
+            }
+            
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const usage = await this.apiUsageService.getUsage(decoded.id);
+    
+            // API Limit Check
+            if (usage.requestsLeft <= 0) {
+                return res.status(429).json({ 
+                    message: 'API limit reached',
+                    detail: 'You have used all 20 API requests'
+                });
+            }
+    
+            // Decrement counter
+            const updatedUsage = await this.apiUsageService.decrementRequests(decoded.id);
+            
+            // Add remaining count to headers for frontend
+            res.set('X-API-Requests-Remaining', updatedUsage.requestsLeft);
+            next();
+        } catch (error) {
+            if (error.name === 'JsonWebTokenError') {
+                return res.status(401).json({ message: 'Invalid token' });
+            }
+            res.status(500).json({ message: 'Server error tracking API usage' });
+        }
+    }
+
+    async getApiStats(req, res) {
+        try {
+            const token = req.headers.cookie?.split("=")[1];
+            if (!token) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
+    
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const UserSchema = this.userService.mongoDBService.getSchema('user');
+            const user = await UserSchema.findById(decoded.id);
+            
+            if (!user || !user.admin) {
+                return res.status(403).json({ message: 'Admin access required' });
+            }
+    
+            const stats = await this.apiStatsService.getStats();
+            res.status(200).json(stats);
+        } catch (error) {
+            console.error('Error getting API stats:', error);
+            res.status(500).json({ message: 'Error getting API statistics' });
+        }
+    }
+
+    // Update the resetApiRequests method
+    async resetApiRequests(req, res) {
+        try {
+            const token = req.headers.cookie?.split("=")[1];
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             
             const UserSchema = this.userService.mongoDBService.getSchema('user');
             const adminUser = await UserSchema.findById(decoded.id);
             
-            // Admin check
             if (!adminUser || !adminUser.admin) {
                 return res.status(403).json({ message: 'Admin access required' });
             }
@@ -297,73 +517,41 @@ class MongoAPIService {
             const user = await UserSchema.findOne({ email });
             if (!user) return res.status(404).json({ message: 'User not found' });
 
-            // Reset logic
-            user.apiRequestsLeft = 20;
-            await user.save();
+            // Reset logic using ApiUsage
+            const usage = await this.apiUsageService.resetRequests(user._id);
 
             res.status(200).json({ 
                 message: 'API requests reset to 20',
                 user: user.email,
-                requestsLeft: user.apiRequestsLeft
+                requestsLeft: usage.requestsLeft,
+                totalRequests: usage.totalRequests
             });
         } catch (error) {
             res.status(500).json({ message: 'Error resetting API requests' });
         }
     }
 
-    /**
-     * Middleware that handles apiCounts for the user.
-     * 
-     * @param {object} req as express request object
-     * @param {object} res as express response object
-     * @param {object} next as express next object
-     * @returns 
-     */
-    async apiUsageMiddleware(req, res, next){
-        if (req.method === 'OPTIONS') return next(); // Skip preflight requests
-            
-        // Skip auth for these public routes
-        //Create a list of paths that we do note use.
-        if (req.path === '/createUser' || req.path === '/checkUser' || req.path == '/authenticate' || req.path ==='/getUser' || req.path ==='/logout' || req.path ==='/getAllUsers') {
-            return next();
-        }
-
+    // Add a new endpoint to get API usage stats
+    async getApiRequests(req, res) {
         try {
-            //attempst to retrieve jwt token
             const token = req.headers.cookie?.split("=")[1];
+            if (!token) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
 
-            if (!token) { 
-                return res.status(401).json({ message: 'Unauthorized - No token provided' })
-            };
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            const UserSchema = this.userService.mongoDBService.getSchema('user');
-            const user = await UserSchema.findById(decoded.id);
+            const usage = await this.apiUsageService.getUsage(decoded.id);
 
-            if (!user) return res.status(404).json({ message: 'User not found' });
-
-            // API Limit Check
-            if (user.apiRequestsLeft <= 0) {
-                return res.status(429).json({ 
-                    message: 'API limit reached',
-                    detail: 'You have used all 20 API requests'
-                });
-            }
-
-            // Decrement counter
-            user.apiRequestsLeft -= 1;
-            await user.save();
-
-            // Add remaining count to headers for frontend
-            res.set('X-API-Requests-Remaining', user.apiRequestsLeft);
-            next();
+            res.status(200).json({ 
+                requestsLeft: usage.requestsLeft,
+                totalRequests: usage.totalRequests,
+                lastReset: usage.lastReset
+            });
         } catch (error) {
-            // Better error differentiation
-            if (error.name === 'JsonWebTokenError') {
-                return res.status(401).json({ message: 'Invalid token' });
-            }
-            res.status(500).json({ message: 'Server error tracking API usage' });
+            res.status(500).json({ message: 'Error getting API usage' });
         }
     }
+
 
     /**
      * Starts express server
@@ -490,34 +678,35 @@ class MongoAPIService {
      * @param {object} res - The Express response object used to send the user data or an error message.
      * @returns {Promise<void>} - A promise that resolves after sending the response.
      */
+    // Update the getUser method to include API usage
     async getUser(req, res) {
         try {
-            // Parse the cookie
             const token = req.headers.cookie?.split('=')[1];
-            
             if (!token) { 
                 return res.status(401).json({ message: 'Unauthorized - No token provided' });
             }
     
-            // Verify token and get user
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             const UserSchema = this.userService.mongoDBService.getSchema('user');
             const user = await UserSchema.findById(decoded.id);
+            const usage = await this.apiUsageService.getUsage(decoded.id);
     
             if (!user) {
                 return res.status(404).json({ message: 'User not found' });
             }
     
-            // Return full user data (excluding sensitive fields)
             const userData = {
                 id: user._id,
                 username: user.username,
                 email: user.email,
                 admin: user.admin,
-                apiRequestsLeft: user.apiRequestsLeft
+                apiUsage: {
+                    requestsLeft: usage.requestsLeft,
+                    totalRequests: usage.totalRequests,
+                    lastReset: usage.lastReset
+                }
             };
             
-            // Return the user data
             return res.status(200).json({ 
                 user: userData,
                 message: 'User data retrieved successfully'
@@ -540,6 +729,7 @@ class MongoAPIService {
     
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             const UserSchema = this.userService.mongoDBService.getSchema('user');
+            const ApiUsageSchema = this.mongoDBService.getSchema('apiUsage');
             
             // Verify requesting user is admin
             const adminUser = await UserSchema.findById(decoded.id);
@@ -552,14 +742,42 @@ class MongoAPIService {
             const limit = parseInt(req.query.limit) || 20;
             const skip = (page - 1) * limit;
     
-            // Get paginated users (excluding passwords)
+            // Get paginated users (excluding passwords) and their API usage
             const [users, totalCount] = await Promise.all([
-                UserSchema.find({}, { password: 0 })
-                    .skip(skip)
-                    .limit(limit),
+                UserSchema.aggregate([
+                    { $match: {} },
+                    { $skip: skip },
+                    { $limit: limit },
+                    { $project: { password: 0 } },
+                    {
+                        $lookup: {
+                            from: 'apiusages', // This should match your MongoDB collection name for apiUsage
+                            localField: '_id',
+                            foreignField: 'userId',
+                            as: 'apiUsage'
+                        }
+                    },
+                    {
+                        $addFields: {
+                            apiUsage: { $arrayElemAt: ['$apiUsage', 0] }
+                        }
+                    },
+                    {
+                        $project: {
+                            username: 1,
+                            email: 1,
+                            admin: 1,
+                            createdAt: 1,
+                            updatedAt: 1,
+                            requestsLeft: { $ifNull: ['$apiUsage.requestsLeft', 0] },
+                            totalRequests: { $ifNull: ['$apiUsage.totalRequests', 0] },
+                            lastReset: { $ifNull: ['$apiUsage.lastReset', new Date(0)] }
+                        }
+                    }
+                ]),
                 UserSchema.countDocuments({})
             ]);
-            
+    
             res.status(200).json({ 
                 users,
                 totalCount,
