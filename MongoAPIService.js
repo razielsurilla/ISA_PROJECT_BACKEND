@@ -140,8 +140,10 @@ class MongoAPIService {
         this.app.post('/checkUser', (req, res) => this.checkUser(req, res));
         this.app.post('/logout', (req, res) => this.logout(req, res));
         this.app.get('/getUser', (req, res) => this.getUser(req, res));
+        this.app.get('/getAllUsers', (req, res) => this.getAllUsers(req, res)); 
         this.app.get('/authenticate', (req, res) => this.authenticate(req, res)); 
         this.app.get('/getApiRequests', (req, res) => this.getApiRequests(req, res));
+        this.app.delete('/deleteUser/:id', (req, res) => this.deleteUser(req, res));
 
 
         // Question Service
@@ -322,7 +324,7 @@ this.app.delete('/deleteQuestion/:id', (req, res) => {
             
         // Skip auth for these public routes
         //Create a list of paths that we do note use.
-        if (req.path === '/createUser' || req.path === '/checkUser' || req.path == '/authenticate' || req.path ==='/getUser' || req.path ==='/logout') {
+        if (req.path === '/createUser' || req.path === '/checkUser' || req.path == '/authenticate' || req.path ==='/getUser' || req.path ==='/logout' || req.path ==='/getAllUsers') {
             return next();
         }
 
@@ -529,6 +531,75 @@ this.app.delete('/deleteQuestion/:id', (req, res) => {
         }
     }
 
+    // // New method to get all users
+    // async getAllUsers(req, res) {
+    //     try {
+    //         const token = req.headers.cookie?.split("=")[1];
+    //         if (!token) {
+    //             return res.status(401).json({ message: 'Unauthorized' });
+    //         }
+
+    //         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    //         const UserSchema = this.userService.mongoDBService.getSchema('user');
+            
+    //         // Verify requesting user is admin
+    //         const adminUser = await UserSchema.findById(decoded.id);
+    //         if (!adminUser || !adminUser.admin) {
+    //             return res.status(403).json({ message: 'Admin access required' });
+    //         }
+
+    //         // Get all users (excluding passwords)
+    //         const users = await UserSchema.find({}, { password: 0 });
+    //         res.status(200).json({ users });
+            
+    //     } catch (error) {
+    //         console.error('Error fetching users:', error);
+    //         res.status(500).json({ message: 'Error fetching users' });
+    //     }
+    // }
+
+    async getAllUsers(req, res) {
+        try {
+            const token = req.headers.cookie?.split("=")[1];
+            if (!token) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
+    
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const UserSchema = this.userService.mongoDBService.getSchema('user');
+            
+            // Verify requesting user is admin
+            const adminUser = await UserSchema.findById(decoded.id);
+            if (!adminUser || !adminUser.admin) {
+                return res.status(403).json({ message: 'Admin access required' });
+            }
+    
+            // Pagination parameters
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 20;
+            const skip = (page - 1) * limit;
+    
+            // Get paginated users (excluding passwords)
+            const [users, totalCount] = await Promise.all([
+                UserSchema.find({}, { password: 0 })
+                    .skip(skip)
+                    .limit(limit),
+                UserSchema.countDocuments({})
+            ]);
+            
+            res.status(200).json({ 
+                users,
+                totalCount,
+                currentPage: page,
+                totalPages: Math.ceil(totalCount / limit)
+            });
+            
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            res.status(500).json({ message: 'Error fetching users' });
+        }
+    }
+
     /**
      * Logs out the user by clearing the authentication cookie
      * 
@@ -548,6 +619,45 @@ this.app.delete('/deleteQuestion/:id', (req, res) => {
         } catch (error) {
             console.error('Logout error:', error);
             res.status(500).json({ message: 'Error logging out' });
+        }
+    }
+
+    async deleteUser(req, res) {
+        try {
+            const token = req.headers.cookie?.split("=")[1];
+            if (!token) {
+                return res.status(401).json({ message: 'Unauthorized' });
+            }
+    
+            // Verify requesting user is admin
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const UserSchema = this.userService.mongoDBService.getSchema('user');
+            const adminUser = await UserSchema.findById(decoded.id);
+            
+            if (!adminUser || !adminUser.admin) {
+                return res.status(403).json({ message: 'Admin access required' });
+            }
+    
+            // Prevent self-deletion
+            if (decoded.id === req.params.id) {
+                return res.status(400).json({ message: 'Cannot delete yourself' });
+            }
+    
+            // Delete the user
+            const result = await UserSchema.findByIdAndDelete(req.params.id);
+            
+            if (!result) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+    
+            res.status(200).json({ 
+                message: 'User deleted successfully',
+                deletedUser: result.email
+            });
+            
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            res.status(500).json({ message: 'Error deleting user' });
         }
     }
 }
