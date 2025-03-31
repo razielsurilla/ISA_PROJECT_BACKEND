@@ -145,125 +145,125 @@ class MongoAPIService {
 
 
         // Question Service
-/**
- * @swagger
- * /createQuestion:
- *   post:
- *     summary: Creates a new question
- *     security:
- *       - cookieAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               category:
- *                 type: string
- *               question:
- *                 type: string
- *               answer:
- *                 type: string
- *     responses:
- *       201:
- *         description: Question created successfully
- *       500:
- *         description: Error creating question
- */
-this.app.post('/createQuestion', (req, res) => {
-    this.questionService.createQuestion(req, res);
-});
+        /**
+         * @swagger
+         * /createQuestion:
+         *   post:
+         *     summary: Creates a new question
+         *     security:
+         *       - cookieAuth: []
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               category:
+         *                 type: string
+         *               question:
+         *                 type: string
+         *               answer:
+         *                 type: string
+         *     responses:
+         *       201:
+         *         description: Question created successfully
+         *       500:
+         *         description: Error creating question
+         */
+        this.app.post('/createQuestion', (req, res) => {
+            this.questionService.createQuestion(req, res);
+        });
 
-/**
- * @swagger
- * /updateQuestion:
- *   put:
- *     summary: Updates a question
- *     security:
- *       - cookieAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               id:
- *                 type: string
- *               category:
- *                 type: string
- *               question:
- *                 type: string
- *               answer:
- *                 type: string
- *     responses:
- *       200:
- *         description: Question updated successfully
- *       400:
- *         description: Invalid question ID format or no fields provided
- *       404:
- *         description: Question not found
- *       500:
- *         description: Internal server error
- */
-this.app.put('/updateQuestion', (req, res) => {
-    this.questionService.updateQuestion(req, res);
-});
+        /**
+         * @swagger
+         * /updateQuestion:
+         *   put:
+         *     summary: Updates a question
+         *     security:
+         *       - cookieAuth: []
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               id:
+         *                 type: string
+         *               category:
+         *                 type: string
+         *               question:
+         *                 type: string
+         *               answer:
+         *                 type: string
+         *     responses:
+         *       200:
+         *         description: Question updated successfully
+         *       400:
+         *         description: Invalid question ID format or no fields provided
+         *       404:
+         *         description: Question not found
+         *       500:
+         *         description: Internal server error
+         */
+        this.app.put('/updateQuestion', (req, res) => {
+            this.questionService.updateQuestion(req, res);
+        });
 
-/**
- * @swagger
- * /getQuestion/{id}:
- *   get:
- *     summary: Retrieves a question by ID
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Question retrieved successfully
- *       404:
- *         description: Question not found
- *       422:
- *         description: Improper ID length
- *       500:
- *         description: Internal server error
- */
-this.app.get('/getQuestion/:id', (req, res) => {
-    this.questionService.getQuestion(req, res);
-});
+        /**
+         * @swagger
+         * /getQuestion/{id}:
+         *   get:
+         *     summary: Retrieves a question by ID
+         *     security:
+         *       - cookieAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Question retrieved successfully
+         *       404:
+         *         description: Question not found
+         *       422:
+         *         description: Improper ID length
+         *       500:
+         *         description: Internal server error
+         */
+        this.app.get('/getQuestion/:id', (req, res) => {
+            this.questionService.getQuestion(req, res);
+        });
 
-/**
- * @swagger
- * /deleteQuestion/{id}:
- *   delete:
- *     summary: Deletes a question by ID
- *     security:
- *       - cookieAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Question deleted successfully
- *       404:
- *         description: Question not found
- *       422:
- *         description: Improper ID length
- *       500:
- *         description: Internal server error
- */
-this.app.delete('/deleteQuestion/:id', (req, res) => {
-    this.questionService.deleteQuestion(req, res);
-});
+        /**
+         * @swagger
+         * /deleteQuestion/{id}:
+         *   delete:
+         *     summary: Deletes a question by ID
+         *     security:
+         *       - cookieAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Question deleted successfully
+         *       404:
+         *         description: Question not found
+         *       422:
+         *         description: Improper ID length
+         *       500:
+         *         description: Internal server error
+         */
+        this.app.delete('/deleteQuestion/:id', (req, res) => {
+            this.questionService.deleteQuestion(req, res);
+        });
 
         
         // Admin Reset Endpoint
@@ -437,7 +437,7 @@ this.app.delete('/deleteQuestion/:id', (req, res) => {
             }
             
             const result = await this.userService.createUser(req.body.username, req.body.email, req.body.password);
-            res.status(201).json({ message: 'User Created Successfully', userId: result._id });
+            res.status(201).json({ message: 'User Created Successfully' });
         } catch (error) {
             res.status(500).json({ message: 'Error creating user: ' + error.message });
         }        
