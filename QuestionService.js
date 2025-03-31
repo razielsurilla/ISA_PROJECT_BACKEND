@@ -161,7 +161,7 @@ class QuestionService{
     
                 // Success
                 res.status(200).json({
-                    message: `Updated Question with ID ${_id} successfully`,
+                    message: `Updated Question ${_id} successfully`,
                 });
     
             } catch (error) {
@@ -224,9 +224,9 @@ class QuestionService{
                 Answer_Audio: null,
             });
             await newQuestion.save();
-            res.status(201).json({ message : '201\nQuestion Created Succesfully\n', questionId : newQuestion._id});
+            res.status(201).json({ message : '201 Question Created Succesfully', questionId : newQuestion._id});
         } catch (error){
-            res.status(500).json({ message : "500 \nError Creating Question "});
+            res.status(500).json({ message : "500 Error Creating Question "});
         }
     }
 }

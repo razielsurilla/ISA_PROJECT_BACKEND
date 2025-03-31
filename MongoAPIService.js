@@ -234,7 +234,7 @@ class MongoAPIService {
                 },
                 servers: [
                     {
-                        url: `http://localhost:${this.port}`, // Important: Use your server's port
+                        url: `https://isa-project-backend-ultkx.ondigitalocean.app`, // Important: Use your server's port
                     },
                 ],
                 components: {
