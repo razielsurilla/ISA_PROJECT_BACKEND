@@ -129,12 +129,12 @@ class QuestionService{
                 // Check ID exists
                 const exists = await triviaStyleSchema.findById(_id);
                 if (!exists) {
-                    return res.status(404).json({ message : `Question of ID ${_id} does not exist`})
+                    return res.status(404).json({ message : `404 Question of ID ${_id} does not exist`})
                 }
         
                 // Check if all fields are empty
                 if (!Category && !Question && !Answer) {
-                    return res.status(400).json({ message: "No fields provided for update." });
+                    return res.status(400).json({ message: "400 No fields provided for update." });
                 }
         
                 // Create an update object with only non-empty fields
@@ -156,23 +156,29 @@ class QuestionService{
                 
                 // Check Updated Question Exists
                 if (!updatedQuestion) {
-                    return res.status(404).json({ message: `Question with ID ${_id} not found` });
+                    return res.status(404).json({ message: `404 Question with ID ${_id} not found` });
                 }
     
                 // Success
                 res.status(200).json({
-                    message: `Updated Question ${_id} successfully`,
+                    message: `Updated Question with ID ${_id} successfully`,
                 });
     
             } catch (error) {
-                res.status(500).json({ message: "Internal Server Error" });
+                res.status(500).json({ message: "500 Internal Server Error" });
             }
         } else {
-            return res.status(400).json({ message : "Invalid question ID format" })
+            return res.status(400).json({ message : "400 Invalid question ID format" })
         }
     }
 
-    
+    /**
+     * Deletes the trivia question entry after retrieving the id
+     *  
+     * @param {object} req as express request object
+     * @param {object} res as express response object
+     * @returns resulting promise
+     */
     async deleteQuestion(req, res) {
         const questionId = req.params.id;
         // Validate question ID
@@ -218,10 +224,9 @@ class QuestionService{
                 Answer_Audio: null,
             });
             await newQuestion.save();
-
-            res.status(201).json({ message : 'Question Created Succesfully', questionId : newQuestion._id});
+            res.status(201).json({ message : '201\nQuestion Created Succesfully\n', questionId : newQuestion._id});
         } catch (error){
-            res.status(500).json({ message : "Error Creating Question : " + error.message});
+            res.status(500).json({ message : "500 \nError Creating Question "});
         }
     }
 }
