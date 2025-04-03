@@ -99,7 +99,7 @@ class QuestionService{
      */
     async aiServerRequest(question, answer) {
         try {
-            const response = await axios.post('http://localhost:8000/tts/', { question, answer }, {
+            const response = await axios.post('http://143.198.49.212:8000/tts', { question, answer }, {
                 headers: {
                     'Content-Type': 'application/json; charset=utf-8',
                 },
@@ -230,6 +230,5 @@ class QuestionService{
         }
     }
 }
-
 
 module.exports = QuestionService;
